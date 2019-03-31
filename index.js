@@ -5,7 +5,7 @@ const EventEmitter = require("events");
 const native = require("./build/Release/netlink-native.node");
 
 const AF_NETLINK = 16;
-const SOCK_DGRAM = 2;
+const NETLINK_ROUTE = 0;
 
 const NLM_F_ECHO = 8;
 const NLM_F_REQUEST = 1;
@@ -19,14 +19,20 @@ const NLMSG_ERROR = 2;
 const NLMSG_DONE = 3;
 
 const open = (opts) => {
-  const family = opts.family;
-  assert(typeof family === "number" && !isNaN(family) && family >= 0, "opts.family should be a positive integer");
-  const groups = opts.groups;
+  let family = opts.family;
+  assert(family === undefined || (typeof family === "number" && !isNaN(family) && family >= 0), "opts.family should be a positive integer");
+  if (family === undefined) {
+    family = NETLINK_ROUTE;
+  }
+  let groups = opts.groups;
   assert(groups === undefined || (typeof groups === "number" && !isNaN(groups) && groups >= 0), "opts.group should be a positive integer");
+  if (groups === undefined) {
+    groups = 0;
+  }
 
   const emitter = new EventEmitter();
 
-  const n = new native.NetlinkSocket(opts.family, opts.groups, (msg) => {
+  const n = new native.NetlinkSocket(family, groups, (msg) => {
     emitter.emit("message", msg);
   });
 
