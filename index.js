@@ -21,10 +21,12 @@ const NLMSG_DONE = 3;
 const open = (opts) => {
   const family = opts.family;
   assert(typeof family === "number" && !isNaN(family) && family >= 0, "opts.family should be a positive integer");
+  const groups = opts.groups;
+  assert(groups === undefined || (typeof groups === "number" && !isNaN(groups) && groups >= 0), "opts.group should be a positive integer");
 
   const emitter = new EventEmitter();
 
-  const n = new native.NetlinkSocket(opts.family, (msg) => {
+  const n = new native.NetlinkSocket(opts.family, opts.groups, (msg) => {
     emitter.emit("message", msg);
   });
 

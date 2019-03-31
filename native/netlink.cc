@@ -21,7 +21,7 @@ class NetlinkSocket : public node::ObjectWrap {
   static void Init(v8::Local<v8::Object> exports);
 
  private:
-  explicit NetlinkSocket(v8::Isolate* isolate, int family, int pid, v8::Local<v8::Function> listener);
+  explicit NetlinkSocket(v8::Isolate* isolate, int family, int pid, int groups, v8::Local<v8::Function> listener);
   ~NetlinkSocket();
 
   static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
@@ -40,7 +40,7 @@ class NetlinkSocket : public node::ObjectWrap {
 
 v8::Persistent<v8::Function> NetlinkSocket::constructor;
 
-NetlinkSocket::NetlinkSocket(v8::Isolate* isolate, int family, int pid, v8::Local<v8::Function> listener) {
+NetlinkSocket::NetlinkSocket(v8::Isolate* isolate, int family, int pid, int groups, v8::Local<v8::Function> listener) {
   fd = socket(AF_NETLINK, SOCK_DGRAM | SOCK_NONBLOCK, family);
   if(fd < 0) {
     isolate->ThrowException(v8::Exception::Error(v8::String::NewFromUtf8(isolate, "failed to create socket")));
@@ -51,7 +51,7 @@ NetlinkSocket::NetlinkSocket(v8::Isolate* isolate, int family, int pid, v8::Loca
   memset(&src_addr, 0, sizeof(src_addr));
   src_addr.nl_family = AF_NETLINK;
   src_addr.nl_pid = pid;
-  src_addr.nl_groups = 0;
+  src_addr.nl_groups = groups;
   
   int res;
   
@@ -129,8 +129,9 @@ void NetlinkSocket::New(const v8::FunctionCallbackInfo<v8::Value>& args) {
   if (args.IsConstructCall()) {
     int family = args[0]->IsUndefined() ? 0 : args[0]->Int32Value();
     int pid = args[1]->IsUndefined() ? 0 : args[1]->Int32Value();
+    int groups = args[2]->IsUndefined() ? 0 : args[2]->Int32Value();
     v8::Local<v8::Function> listener = v8::Local<v8::Function>::Cast(args[1]);
-    NetlinkSocket* obj = new NetlinkSocket(isolate, family, pid, listener);
+    NetlinkSocket* obj = new NetlinkSocket(isolate, family, pid, groups, listener);
     obj->Wrap(args.This());
     args.GetReturnValue().Set(args.This());
   } else {
